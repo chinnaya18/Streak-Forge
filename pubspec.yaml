@@ -1,0 +1,52 @@
+name: streak_forge
+description: A cross-platform habit tracking app that promotes discipline through streak tracking, analytics, and social accountability.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
+  cloud_firestore: ^6.1.2
+  firebase_messaging: ^16.1.1
+  firebase_storage: ^13.0.6
+
+  # State Management
+  provider: ^6.1.1
+
+  # UI & Animations
+  cupertino_icons: ^1.0.6
+  confetti: ^0.8.0
+  fl_chart: ^0.69.2
+  lottie: ^3.3.2
+  cached_network_image: ^3.4.1
+  flutter_animate: ^4.5.2
+
+  # Utilities
+  intl: ^0.20.2
+  uuid: ^4.5.2
+  shared_preferences: ^2.5.4
+  flutter_local_notifications: ^20.1.0
+  timezone: ^0.10.1
+  percent_indicator: ^4.2.5
+  google_fonts: ^6.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/animations/
+
+  # Fonts loaded via google_fonts package at runtime
