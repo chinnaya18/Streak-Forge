@@ -7,18 +7,24 @@ import '../../providers/auth_provider.dart';
 import '../../providers/habit_provider.dart';
 import '../../models/habit_model.dart';
 import '../../services/habit_service.dart';
+import '../../widgets/work_list_widget.dart';
 import 'package:intl/intl.dart';
 
-class HabitDetailScreen extends StatelessWidget {
+class HabitDetailScreen extends StatefulWidget {
   final String habitId;
 
   const HabitDetailScreen({super.key, required this.habitId});
 
   @override
+  State<HabitDetailScreen> createState() => _HabitDetailScreenState();
+}
+
+class _HabitDetailScreenState extends State<HabitDetailScreen> {
+  @override
   Widget build(BuildContext context) {
     final habitProvider = Provider.of<HabitProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final habit = habitProvider.habits.where((h) => h.id == habitId).firstOrNull;
+    final habit = habitProvider.habits.where((h) => h.id == widget.habitId).firstOrNull;
 
     if (habit == null) {
       return Scaffold(
@@ -27,7 +33,7 @@ class HabitDetailScreen extends StatelessWidget {
       );
     }
 
-    final isCompletedToday = habitProvider.isHabitCompletedToday(habitId);
+    final isCompletedToday = habitProvider.isHabitCompletedToday(widget.habitId);
     final dateFormat = DateFormat('MMM dd, yyyy');
 
     return Scaffold(
@@ -61,7 +67,7 @@ class HabitDetailScreen extends StatelessWidget {
 
                   if (confirm == true && context.mounted) {
                     await habitProvider.deleteHabit(
-                      habitId,
+                      widget.habitId,
                       authProvider.userId!,
                     );
                     Navigator.pop(context);
@@ -204,10 +210,43 @@ class HabitDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-            // Action Button
+            // Works / Tasks section
             if (habit.status == HabitStatus.active) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Daily Tasks',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              WorkListWidget(
+                habitId: widget.habitId,
+                userId: authProvider.userId!,
+                onAllCompleted: () async {
+                  if (!isCompletedToday) {
+                    await habitProvider.completeHabit(
+                      userId: authProvider.userId!,
+                      habitId: widget.habitId,
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('All tasks done! Habit completed for today! 🎉'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Manual complete button (in case user has no tasks)
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -217,7 +256,7 @@ class HabitDetailScreen extends StatelessWidget {
                       : () async {
                           await habitProvider.completeHabit(
                             userId: authProvider.userId!,
-                            habitId: habitId,
+                          habitId: widget.habitId,
                           );
                         },
                   icon: Icon(
@@ -243,7 +282,7 @@ class HabitDetailScreen extends StatelessWidget {
                 height: 56,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    _showRenewDialog(context, habitProvider);
+                    _showRenewDialog(context, habitProvider, widget.habitId);
                   },
                   icon: const Icon(Icons.refresh),
                   label: const Text('Renew Habit'),
@@ -326,7 +365,7 @@ class HabitDetailScreen extends StatelessWidget {
     }
   }
 
-  void _showRenewDialog(BuildContext context, HabitProvider habitProvider) {
+  void _showRenewDialog(BuildContext context, HabitProvider habitProvider, String habitId) {
     int selectedDuration = 30;
 
     showDialog(

@@ -232,7 +232,9 @@ class ProfileScreen extends StatelessWidget {
 
                   if (confirm == true && context.mounted) {
                     await authProvider.signOut();
-                    Navigator.pushReplacementNamed(context, AppRoutes.login);
+                    Navigator.pushNamedAndRemoveUntil(
+                      context, AppRoutes.login, (route) => false,
+                    );
                   }
                 },
                 icon: const Icon(Icons.logout, color: AppColors.error),

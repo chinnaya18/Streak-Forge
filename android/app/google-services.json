@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "395796914101",
+    "project_id": "streakforge-c709f",
+    "storage_bucket": "streakforge-c709f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:395796914101:android:5d4d3b1a071c80b1e643fc",
+        "android_client_info": {
+          "package_name": "com.streakforge.streak_forge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJ0Ry2z29T94g9GoBrEPi-6uzDha1nfzM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

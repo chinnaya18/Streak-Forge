@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/habit_model.dart';
 import '../models/completion_model.dart';
+import '../models/work_model.dart';
 import '../config/constants.dart';
 
 class HabitService {
@@ -120,7 +121,7 @@ class HabitService {
 
     // Check if habit duration is complete
     final habit = await getHabit(habitId);
-    if (habit != null && habit.completedDays + 1 >= habit.durationDays) {
+    if (habit != null && habit.completedDays >= habit.durationDays) {
       await _firestore
           .collection(AppConstants.habitsCollection)
           .doc(habitId)
@@ -207,5 +208,102 @@ class HabitService {
       icon: habit.icon,
       durationDays: durationDays,
     );
+  }
+
+  // Work-related methods
+  // Create a new work/task for a habit
+  Future<WorkModel> createWork({
+    required String habitId,
+    required String userId,
+    required String workName,
+  }) async {
+    final now = DateTime.now();
+    final workRef = _firestore
+        .collection(AppConstants.habitsCollection)
+        .doc(habitId)
+        .collection('works')
+        .doc();
+
+    final work = WorkModel(
+      id: workRef.id,
+      habitId: habitId,
+      userId: userId,
+      workName: workName,
+      createdAt: now,
+      order: 0,
+    );
+
+    await workRef.set(work.toMap());
+    return work;
+  }
+
+  // Get all works for a habit
+  Stream<List<WorkModel>> getWorksForHabit(String habitId) {
+    return _firestore
+        .collection(AppConstants.habitsCollection)
+        .doc(habitId)
+        .collection('works')
+        .orderBy('createdAt')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => WorkModel.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
+  // Update work completion status
+  Future<void> updateWorkCompletion({
+    required String habitId,
+    required String workId,
+    required bool isCompleted,
+  }) async {
+    await _firestore
+        .collection(AppConstants.habitsCollection)
+        .doc(habitId)
+        .collection('works')
+        .doc(workId)
+        .update({
+      'isCompleted': isCompleted,
+      'completedAt': isCompleted ? Timestamp.now() : null,
+    });
+  }
+
+  // Delete a work
+  Future<void> deleteWork({
+    required String habitId,
+    required String workId,
+  }) async {
+    await _firestore
+        .collection(AppConstants.habitsCollection)
+        .doc(habitId)
+        .collection('works')
+        .doc(workId)
+        .delete();
+  }
+
+  // Check if all works are completed for a habit
+  Future<bool> areAllWorksCompleted(String habitId) async {
+    final snapshot = await _firestore
+        .collection(AppConstants.habitsCollection)
+        .doc(habitId)
+        .collection('works')
+        .where('isCompleted', isEqualTo: false)
+        .get();
+
+    return snapshot.docs.isEmpty;
+  }
+
+  // Get completion count for a habit
+  Future<Map<String, int>> getWorkCompletionStats(String habitId) async {
+    final snapshot = await _firestore
+        .collection(AppConstants.habitsCollection)
+        .doc(habitId)
+        .collection('works')
+        .get();
+
+    final total = snapshot.docs.length;
+    final completed =
+        snapshot.docs.where((doc) => doc['isCompleted'] == true).length;
+
+    return {'total': total, 'completed': completed};
   }
 }

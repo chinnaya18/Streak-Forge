@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../config/constants.dart';
 
 class NotificationService {
@@ -12,27 +13,43 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
+  bool _initialized = false;
+
   Future<void> initialize() async {
-    tzdata.initializeTimeZones();
+    try {
+      tzdata.initializeTimeZones();
 
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+      if (kIsWeb) {
+        // flutter_local_notifications does not support web natively.
+        // On web we skip plugin init - notifications won't fire but app won't crash.
+        _initialized = false;
+        return;
+      }
 
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
+      // Mobile platforms
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    await _notifications.initialize(
-      initializationSettings: initSettings,
-      onDidReceiveNotificationResponse: _onNotificationResponse,
-    );
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
+
+      await _notifications.initialize(
+        settings: initSettings,
+        onDidReceiveNotificationResponse: _onNotificationResponse,
+      );
+      _initialized = true;
+    } catch (e) {
+      print('Notification initialization error: $e');
+      _initialized = false;
+    }
   }
 
   void _onNotificationResponse(NotificationResponse response) {
@@ -44,111 +61,173 @@ class NotificationService {
     required int hour,
     required int minute,
   }) async {
-    await _notifications.zonedSchedule(
-      id: 0,
-      title: '🔥 ${AppConstants.appName}',
-      body: 'Time to complete your habits! Keep your streak alive!',
-      scheduledDate: _nextInstanceOfTime(hour, minute),
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          AppConstants.dailyReminderChannel,
-          'Daily Reminders',
-          channelDescription: 'Daily habit completion reminders',
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+    try {
+      // Save preference regardless of platform
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(AppConstants.prefReminderTime, '$hour:$minute');
 
-    // Save preference
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.prefReminderTime, '$hour:$minute');
+      if (!_initialized) return;
+
+      await _notifications.zonedSchedule(
+        id: 0,
+        title: '\ud83d\udd25 ${AppConstants.appName}',
+        body: 'Time to complete your habits! Keep your streak alive!',
+        scheduledDate: _nextInstanceOfTime(hour, minute),
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            AppConstants.dailyReminderChannel,
+            'Daily Reminders',
+            channelDescription: 'Daily habit completion reminders',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      print('Error scheduling daily reminder: $e');
+    }
   }
 
   /// Send streak risk notification
   Future<void> sendStreakRiskAlert() async {
-    await _notifications.show(
-      id: 1,
-      title: '⚠️ Streak at Risk!',
-      body:
-          'You haven\'t completed all your habits today. Don\'t break your streak!',
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          AppConstants.streakAlertChannel,
-          'Streak Alerts',
-          channelDescription: 'Alerts when your streak is at risk',
-          importance: Importance.max,
-          priority: Priority.max,
-          icon: '@mipmap/ic_launcher',
+    try {
+      if (!_initialized) return;
+
+      await _notifications.show(
+        id: 1,
+        title: '\u26a0\ufe0f Streak at Risk!',
+        body:
+            'You haven\'t completed all your habits today. Don\'t break your streak!',
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            AppConstants.streakAlertChannel,
+            'Streak Alerts',
+            channelDescription: 'Alerts when your streak is at risk',
+            importance: Importance.max,
+            priority: Priority.max,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Error sending streak alert: $e');
+    }
   }
 
   /// Send friend activity notification
   Future<void> sendFriendAlert(String friendName) async {
-    await _notifications.show(
-      id: 2,
-      title: '👋 Friend Activity',
-      body: '$friendName completed their habits! Can you keep up?',
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          AppConstants.friendAlertChannel,
-          'Friend Alerts',
-          channelDescription: 'Friend activity notifications',
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
-          icon: '@mipmap/ic_launcher',
+    try {
+      if (!_initialized) return;
+
+      await _notifications.show(
+        id: 2,
+        title: '\ud83d\udc4b Friend Activity',
+        body: '$friendName completed their habits! Can you keep up?',
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            AppConstants.friendAlertChannel,
+            'Friend Alerts',
+            channelDescription: 'Friend activity notifications',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Error sending friend alert: $e');
+    }
   }
 
   /// Send birthday notification
   Future<void> sendBirthdayNotification() async {
-    await _notifications.show(
-      id: 3,
-      title: '🎂 Happy Birthday!',
-      body: AppConstants.birthdayMessage,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          AppConstants.dailyReminderChannel,
-          'Daily Reminders',
-          channelDescription: 'Daily reminders',
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+    try {
+      if (!_initialized) return;
+
+      await _notifications.show(
+        id: 3,
+        title: '\ud83c\udf82 Happy Birthday!',
+        body: AppConstants.birthdayMessage,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            AppConstants.dailyReminderChannel,
+            'Daily Reminders',
+            channelDescription: 'Daily reminders',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
+      );
+    } catch (e) {
+      print('Error sending birthday notification: $e');
+    }
+  }
+
+  /// Send friend request notification
+  Future<void> showFriendRequestNotification({
+    required String friendName,
+    required String requestId,
+  }) async {
+    try {
+      if (!_initialized) return;
+
+      await _notifications.show(
+        id: requestId.hashCode,
+        title: '👥 Friend Request',
+        body: '$friendName wants to connect!',
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            AppConstants.dailyReminderChannel,
+            'Friend Requests',
+            channelDescription: 'Notifications for friend requests',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Error sending friend request notification: $e');
+    }
   }
 
   /// Cancel all notifications
   Future<void> cancelAll() async {
-    await _notifications.cancelAll();
+    try {
+      if (!_initialized) return;
+      await _notifications.cancelAll();
+    } catch (e) {
+      print('Error canceling notifications: $e');
+    }
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {

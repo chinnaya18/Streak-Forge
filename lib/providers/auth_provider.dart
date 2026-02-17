@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/friend_request_listener.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final FriendRequestListener _friendRequestListener = FriendRequestListener();
 
   UserModel? _user;
   bool _isLoading = false;
@@ -21,15 +23,21 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _initAuth() {
-    _authService.authStateChanges.listen((User? firebaseUser) async {
-      if (firebaseUser != null) {
-        _user = await _authService.getUserData(firebaseUser.uid);
-        notifyListeners();
-      } else {
-        _user = null;
-        notifyListeners();
-      }
-    });
+    try {
+      _authService.authStateChanges.listen((User? firebaseUser) async {
+        if (firebaseUser != null) {
+          _user = await _authService.getUserData(firebaseUser.uid);
+          // Start listening for friend requests
+          _friendRequestListener.listenForFriendRequests(firebaseUser.uid);
+          notifyListeners();
+        } else {
+          _user = null;
+          notifyListeners();
+        }
+      });
+    } catch (e) {
+      debugPrint('Auth initialization skipped: $e');
+    }
   }
 
   Future<bool> register({
@@ -53,7 +61,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return _user != null;
     } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceAll('Exception: ', '');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -77,7 +85,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return _user != null;
     } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceAll('Exception: ', '');
       _isLoading = false;
       notifyListeners();
       return false;

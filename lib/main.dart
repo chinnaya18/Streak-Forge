@@ -13,26 +13,40 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // Initialize Firebase with options for web
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyBJ0Ry2z29T94g9GoBrEPi-6uzDha1nfzM",
+        authDomain: "streakforge-c709f.firebaseapp.com",
+        projectId: "streakforge-c709f",
+        storageBucket: "streakforge-c709f.firebasestorage.app",
+        messagingSenderId: "395796914101",
+        appId: '1:395796914101:web:45067f9805b22a85e643fc',
+        databaseURL: "https://streakforge-c709f.firebaseio.com",
+      ),
+    );
+    debugPrint('✅ Firebase initialized successfully.');
   } catch (e) {
-    debugPrint('Firebase initialization failed: $e');
-    debugPrint('Running in offline/development mode.');
+    debugPrint('⚠️ Firebase initialization warning: $e');
   }
 
   // Initialize Notifications
   try {
     await NotificationService().initialize();
   } catch (e) {
-    debugPrint('Notification initialization failed: $e');
+    debugPrint('⚠️ Notification initialization failed: $e');
   }
 
   // Set preferred orientations
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  try {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  } catch (e) {
+    debugPrint('⚠️ Orientation settings not supported on this platform.');
+  }
 
   runApp(const StreakForgeApp());
 }

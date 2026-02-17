@@ -49,7 +49,8 @@ class AppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case habitDetail:
-        final habitId = settings.arguments as String;
+        final habitId = settings.arguments as String?;
+        if (habitId == null) return null;
         return MaterialPageRoute(
           builder: (context) => HabitDetailScreen(habitId: habitId),
         );

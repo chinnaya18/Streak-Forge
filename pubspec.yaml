@@ -1,5 +1,5 @@
 name: streak_forge
-description: A cross-platform habit tracking app that promotes discipline through streak tracking, analytics, and social accountability.
+description: StreakZen - A cross-platform habit tracking app that promotes discipline through streak tracking, analytics, and social accountability.
 publish_to: "none"
 version: 1.0.0+1
 
@@ -41,12 +41,24 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
+    - assets/images/app_icon.svg
     - assets/animations/
 
   # Fonts loaded via google_fonts package at runtime
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  web:
+    generate: true
+    background_color: "#FF6B35"
+    theme_color: "#FF6B35"
+  image_path: "assets/images/app_icon.svg"
+  min_sdk_android: 21

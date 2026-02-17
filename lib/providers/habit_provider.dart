@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/habit_model.dart';
 import '../models/completion_model.dart';
+import '../models/work_model.dart';
 import '../services/habit_service.dart';
 import '../services/streak_service.dart';
 import '../services/achievement_service.dart';
@@ -9,6 +11,9 @@ class HabitProvider extends ChangeNotifier {
   final HabitService _habitService = HabitService();
   final StreakService _streakService = StreakService();
   final AchievementService _achievementService = AchievementService();
+
+  StreamSubscription? _habitsSubscription;
+  StreamSubscription? _activeHabitsSubscription;
 
   List<HabitModel> _habits = [];
   List<HabitModel> _activeHabits = [];
@@ -29,12 +34,16 @@ class HabitProvider extends ChangeNotifier {
 
   /// Initialize habit data for a user
   void initHabits(String userId) {
-    _habitService.getUserHabits(userId).listen((habits) {
+    // Cancel previous subscriptions to avoid memory leaks
+    _habitsSubscription?.cancel();
+    _activeHabitsSubscription?.cancel();
+
+    _habitsSubscription = _habitService.getUserHabits(userId).listen((habits) {
       _habits = habits;
       notifyListeners();
     });
 
-    _habitService.getActiveHabits(userId).listen((habits) {
+    _activeHabitsSubscription = _habitService.getActiveHabits(userId).listen((habits) {
       _activeHabits = habits;
       _checkAllCompleted();
       notifyListeners();
@@ -158,8 +167,77 @@ class HabitProvider extends ChangeNotifier {
     );
   }
 
+  // Work-related methods
+  Stream<List<WorkModel>> getWorksForHabit(String habitId) {
+    return _habitService.getWorksForHabit(habitId);
+  }
+
+  Future<void> addWork({
+    required String habitId,
+    required String userId,
+    required String workName,
+  }) async {
+    try {
+      await _habitService.createWork(
+        habitId: habitId,
+        userId: userId,
+        workName: workName,
+      );
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateWorkCompletion({
+    required String habitId,
+    required String workId,
+    required bool isCompleted,
+  }) async {
+    try {
+      await _habitService.updateWorkCompletion(
+        habitId: habitId,
+        workId: workId,
+        isCompleted: isCompleted,
+      );
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteWork({
+    required String habitId,
+    required String workId,
+  }) async {
+    try {
+      await _habitService.deleteWork(
+        habitId: habitId,
+        workId: workId,
+      );
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> areAllWorksCompleted(String habitId) async {
+    return _habitService.areAllWorksCompleted(habitId);
+  }
+
+  Future<Map<String, int>> getWorkCompletionStats(String habitId) async {
+    return _habitService.getWorkCompletionStats(habitId);
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _habitsSubscription?.cancel();
+    _activeHabitsSubscription?.cancel();
+    super.dispose();
   }
 }

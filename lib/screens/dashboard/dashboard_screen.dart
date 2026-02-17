@@ -9,6 +9,7 @@ import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/habit_provider.dart';
 import '../../models/habit_model.dart';
+import '../../models/work_model.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,6 +21,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late ConfettiController _confettiController;
   bool _celebrationShown = false;
+  bool _birthdayDialogShown = false;
 
   @override
   void initState() {
@@ -73,7 +75,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (user == null) return const SizedBox.shrink();
 
     // Check for birthday
-    if (user.isBirthdayToday) {
+    if (user.isBirthdayToday && !_birthdayDialogShown) {
+      _birthdayDialogShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showBirthdayDialog();
       });
@@ -468,96 +471,147 @@ class _HabitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
+
     return Card(
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              // Completion checkbox
-              GestureDetector(
-                onTap: isCompleted ? null : onComplete,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? AppColors.success
-                        : AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(14),
-                    border: isCompleted
-                        ? null
-                        : Border.all(
-                            color: AppColors.primary.withOpacity(0.3),
-                            width: 2,
-                          ),
-                  ),
-                  child: Icon(
-                    isCompleted ? Icons.check : Icons.circle_outlined,
-                    color: isCompleted ? Colors.white : AppColors.primary,
-                    size: 24,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Habit info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      habit.habitName,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        decoration: isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
+              Row(
+                children: [
+                  // Completion checkbox
+                  GestureDetector(
+                    onTap: isCompleted ? null : onComplete,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
                         color: isCompleted
-                            ? AppColors.textSecondaryLight
-                            : null,
+                            ? AppColors.success
+                            : AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: isCompleted
+                            ? null
+                            : Border.all(
+                                color: AppColors.primary.withOpacity(0.3),
+                                width: 2,
+                              ),
+                      ),
+                      child: Icon(
+                        isCompleted ? Icons.check : Icons.circle_outlined,
+                        color: isCompleted ? Colors.white : AppColors.primary,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                  ),
+                  const SizedBox(width: 16),
+
+                  // Habit info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${habit.completedDays}/${habit.durationDays} days',
-                          style: const TextStyle(
-                            color: AppColors.textSecondaryLight,
-                            fontSize: 13,
+                          habit.habitName,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            decoration: isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                            color: isCompleted
+                                ? AppColors.textSecondaryLight
+                                : null,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              '${habit.completedDays}/${habit.durationDays} days',
+                              style: const TextStyle(
+                                color: AppColors.textSecondaryLight,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: habit.progressPercentage,
+                                  backgroundColor: AppColors.primary.withOpacity(
+                                    0.1,
+                                  ),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(
+                                    AppColors.primary,
+                                  ),
+                                  minHeight: 6,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Arrow
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ],
+              ),
+              // Show work/task summary
+              StreamBuilder<List<WorkModel>>(
+                stream: habitProvider.getWorksForHabit(habit.id),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final works = snapshot.data!;
+                  final completedCount = works.where((w) => w.isCompleted).length;
+                  final totalCount = works.length;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 10, left: 64),
+                    child: Row(
+                      children: [
+                        Icon(Icons.task_alt, size: 16, color: completedCount == totalCount ? AppColors.success : AppColors.textSecondaryLight),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$completedCount/$totalCount tasks',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: completedCount == totalCount
+                                ? AppColors.success
+                                : AppColors.textSecondaryLight,
+                            fontWeight: completedCount == totalCount
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(3),
                             child: LinearProgressIndicator(
-                              value: habit.progressPercentage,
-                              backgroundColor: AppColors.primary.withOpacity(
-                                0.1,
-                              ),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
-                              ),
-                              minHeight: 6,
+                              value: totalCount > 0 ? completedCount / totalCount : 0,
+                              backgroundColor: AppColors.success.withOpacity(0.1),
+                              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
+                              minHeight: 4,
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-
-              // Arrow
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondaryLight,
+                  );
+                },
               ),
             ],
           ),

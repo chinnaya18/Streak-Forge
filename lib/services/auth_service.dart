@@ -39,14 +39,22 @@ class AuthService {
         friendId: _generateFriendId(credential.user!.uid),
       );
 
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(credential.user!.uid)
-          .set(user.toMap());
+      try {
+        await _firestore
+            .collection(AppConstants.usersCollection)
+            .doc(credential.user!.uid)
+            .set(user.toMap());
+      } catch (firestoreError) {
+        // If Firestore fails, delete the auth user
+        await credential.user!.delete();
+        throw Exception('Failed to create user profile: $firestoreError');
+      }
 
       return user;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthError(e);
+    } catch (e) {
+      throw Exception('Registration failed: ${e.toString()}');
     }
   }
 
@@ -67,6 +75,8 @@ class AuthService {
       return await getUserData(credential.user!.uid);
     } on FirebaseAuthException catch (e) {
       throw _handleAuthError(e);
+    } catch (e) {
+      throw Exception('Login failed: ${e.toString()}');
     }
   }
 

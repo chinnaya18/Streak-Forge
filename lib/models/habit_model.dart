@@ -90,7 +90,7 @@ class HabitModel {
     );
   }
 
-  double get progressPercentage => completedDays / durationDays;
+  double get progressPercentage => (completedDays / durationDays).clamp(0.0, 1.0);
 
   int get remainingDays {
     final now = DateTime.now();

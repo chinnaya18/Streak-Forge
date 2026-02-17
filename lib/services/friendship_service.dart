@@ -66,10 +66,36 @@ class FriendshipService {
       user1Name: currentUser.name,
       user2Name: friendUser.name,
       createdAt: DateTime.now(),
+      status: FriendshipStatus.pending,
     );
 
     await docRef.set(friendship.toMap());
     return friendship;
+  }
+
+  /// Accept a friend request
+  Future<void> acceptFriendRequest({
+    required String friendshipId,
+    required String userId,
+  }) async {
+    final docRef =
+        _firestore.collection(AppConstants.friendshipsCollection).doc(friendshipId);
+    
+    final doc = await docRef.get();
+    if (!doc.exists) {
+      throw Exception('Friendship request not found');
+    }
+
+    final friendship = FriendshipModel.fromMap(doc.data()!, friendshipId);
+    
+    // Only the receiver (user2Id) can accept
+    if (friendship.user2Id != userId && friendship.user1Id != userId) {
+      throw Exception('Unauthorized');
+    }
+
+    await docRef.update({
+      'status': 'accepted',
+    });
   }
 
   /// Get all friendships for a user

@@ -33,23 +33,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     if (userId == null) return;
 
-    final now = DateTime.now();
-    final weekStart = now.subtract(const Duration(days: 7));
-    final monthStart = now.subtract(const Duration(days: 30));
+    try {
+      final now = DateTime.now();
+      final weekStart = now.subtract(const Duration(days: 7));
+      final monthStart = now.subtract(const Duration(days: 30));
 
-    _weeklyData = await habitProvider.getCompletionsInRange(
-      userId: userId,
-      startDate: weekStart,
-      endDate: now,
-    );
+      _weeklyData = await habitProvider.getCompletionsInRange(
+        userId: userId,
+        startDate: weekStart,
+        endDate: now,
+      );
 
-    _monthlyData = await habitProvider.getCompletionsInRange(
-      userId: userId,
-      startDate: monthStart,
-      endDate: now,
-    );
+      _monthlyData = await habitProvider.getCompletionsInRange(
+        userId: userId,
+        startDate: monthStart,
+        endDate: now,
+      );
+    } catch (e) {
+      print('Error loading analytics: $e');
+    }
 
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
