@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/constants.dart';
@@ -66,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen>
             colors: [
               AppColors.primary,
               AppColors.primaryDark,
-              Color(0xFFCC4400),
+              Color(0xFF8E1A1A),
             ],
           ),
         ),
@@ -81,37 +82,37 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // App Icon
+                      // App Logo
                       Container(
-                        width: 120,
-                        height: 120,
+                        width: 140,
+                        height: 140,
                         decoration: BoxDecoration(
-                          color: Colors.white,
                           borderRadius: BorderRadius.circular(30),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withOpacity(0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
                           ],
                         ),
-                        child: const Center(
-                          child: Text(
-                            '🔥',
-                            style: TextStyle(fontSize: 60),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: SvgPicture.asset(
+                            'assets/images/app_icon.svg',
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                       // App Name
                       const Text(
                         AppConstants.appName,
                         style: TextStyle(
-                          fontSize: 36,
+                          fontSize: 40,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          letterSpacing: 2,
+                          letterSpacing: 3,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -119,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen>
                         AppConstants.appTagline,
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withOpacity(0.7),
                           letterSpacing: 1,
                         ),
                       ),
@@ -129,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen>
                         height: 40,
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white.withOpacity(0.8),
+                            AppColors.accent.withOpacity(0.8),
                           ),
                           strokeWidth: 3,
                         ),

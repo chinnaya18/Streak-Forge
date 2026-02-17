@@ -405,12 +405,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
           habit: habit,
           isCompleted: isCompleted,
           onComplete: () async {
-            await habitProvider.completeHabit(
-              userId: userId,
-              habitId: habit.id,
+            if (isCompleted) return;
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, color: AppColors.accent),
+                    const SizedBox(width: 8),
+                    const Text('Complete Habit'),
+                  ],
+                ),
+                content: Text('Are you sure you have finished "${habit.habitName}" for today?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Yes, Done!'),
+                  ),
+                ],
+              ),
             );
+            if (confirm == true) {
+              await habitProvider.completeHabit(
+                userId: userId,
+                habitId: habit.id,
+              );
+            }
           },
-          onTap: () {},
         );
       },
     );
@@ -454,13 +480,11 @@ class _HabitCard extends StatelessWidget {
   final HabitModel habit;
   final bool isCompleted;
   final VoidCallback onComplete;
-  final VoidCallback onTap;
 
   const _HabitCard({
     required this.habit,
     required this.isCompleted,
     required this.onComplete,
-    required this.onTap,
   });
 
   @override
@@ -468,11 +492,8 @@ class _HabitCard extends StatelessWidget {
     final habitProvider = Provider.of<HabitProvider>(context, listen: false);
 
     return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Row(
@@ -554,12 +575,6 @@ class _HabitCard extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Arrow
-                  const Icon(
-                    Icons.chevron_right,
-                    color: AppColors.textSecondaryLight,
-                  ),
                 ],
               ),
               // Show work/task summary
@@ -610,7 +625,6 @@ class _HabitCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }

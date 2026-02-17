@@ -16,7 +16,9 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _customDaysController = TextEditingController();
   int _selectedDuration = 30;
+  bool _isCustomDays = false;
   String _selectedIcon = '🎯';
 
   final List<String> _iconOptions = [
@@ -28,6 +30,7 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _customDaysController.dispose();
     super.dispose();
   }
 
@@ -161,45 +164,97 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
               ),
               const SizedBox(height: 12),
               Row(
-                children: AppConstants.habitDurations.map((days) {
-                  final isSelected = _selectedDuration == days;
-                  return Expanded(
+                children: [
+                  ...AppConstants.habitDurations.map((days) {
+                    final isSelected = !_isCustomDays && _selectedDuration == days;
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: GestureDetector(
+                          onTap: () => setState(() {
+                            _selectedDuration = days;
+                            _isCustomDays = false;
+                            _customDaysController.clear();
+                          }),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.accent
+                                  : AppColors.accent.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.accent
+                                    : AppColors.accent.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  '$days',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.accent,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'days',
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white70
+                                        : AppColors.textSecondaryLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // Custom option
+                  Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: GestureDetector(
-                        onTap: () =>
-                            setState(() => _selectedDuration = days),
+                        onTap: () => setState(() {
+                          _isCustomDays = true;
+                        }),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.primary.withOpacity(0.05),
+                            color: _isCustomDays
+                                ? AppColors.accent
+                                : AppColors.accent.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.primary.withOpacity(0.2),
+                              color: _isCustomDays
+                                  ? AppColors.accent
+                                  : AppColors.accent.withOpacity(0.2),
                             ),
                           ),
                           child: Column(
                             children: [
-                              Text(
-                                '$days',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppColors.primary,
-                                ),
+                              Icon(
+                                Icons.edit,
+                                size: 28,
+                                color: _isCustomDays
+                                    ? Colors.white
+                                    : AppColors.accent,
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'days',
+                                'Custom',
                                 style: TextStyle(
-                                  color: isSelected
+                                  fontSize: 12,
+                                  color: _isCustomDays
                                       ? Colors.white70
                                       : AppColors.textSecondaryLight,
                                 ),
@@ -209,9 +264,39 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
                         ),
                       ),
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
+              if (_isCustomDays) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _customDaysController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Enter number of days',
+                    hintText: 'e.g., 21, 45, 100...',
+                    prefixIcon: Icon(Icons.calendar_today),
+                  ),
+                  validator: (value) {
+                    if (_isCustomDays) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter the number of days';
+                      }
+                      final days = int.tryParse(value.trim());
+                      if (days == null || days < 1 || days > 365) {
+                        return 'Enter a number between 1 and 365';
+                      }
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    final days = int.tryParse(value.trim());
+                    if (days != null && days > 0) {
+                      setState(() => _selectedDuration = days);
+                    }
+                  },
+                ),
+              ],
               const SizedBox(height: 32),
 
               // Preview Card

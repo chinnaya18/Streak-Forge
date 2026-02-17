@@ -1,8 +1,8 @@
 class AppConstants {
   // App Info
-  static const String appName = 'StreakZen';
+  static const String appName = 'Strique';
   static const String appVersion = '1.0.0';
-  static const String appTagline = 'Forge Your Discipline';
+  static const String appTagline = 'Track. Streak. Conquer.';
 
   // Habit Durations
   static const List<int> habitDurations = [30, 60, 90];

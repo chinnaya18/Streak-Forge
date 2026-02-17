@@ -1,11 +1,11 @@
 {
-    "name": "StreakZen",
-    "short_name": "StreakZen",
+    "name": "Strique",
+    "short_name": "Strique",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FF6B35",
-    "theme_color": "#FF6B35",
-    "description": "Forge Your Discipline - A habit tracking app",
+    "background_color": "#E74C3C",
+    "theme_color": "#E74C3C",
+    "description": "Track. Streak. Conquer. - A habit tracking app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
