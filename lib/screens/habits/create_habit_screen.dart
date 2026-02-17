@@ -17,13 +17,29 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _customDaysController = TextEditingController();
+  final _taskController = TextEditingController();
   int _selectedDuration = 30;
   bool _isCustomDays = false;
   String _selectedIcon = '🎯';
+  final List<String> _tasks = [];
 
   final List<String> _iconOptions = [
-    '🎯', '📚', '🏃', '💪', '🧘', '✍️', '🎵', '🍎',
-    '💧', '😴', '🧠', '📝', '🎨', '💻', '🌱', '🏋️',
+    '🎯',
+    '📚',
+    '🏃',
+    '💪',
+    '🧘',
+    '✍️',
+    '🎵',
+    '🍎',
+    '💧',
+    '😴',
+    '🧠',
+    '📝',
+    '🎨',
+    '💻',
+    '🌱',
+    '🏋️',
   ];
 
   @override
@@ -31,6 +47,7 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     _customDaysController.dispose();
+    _taskController.dispose();
     super.dispose();
   }
 
@@ -43,7 +60,7 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
 
     if (userId == null) return;
 
-    final success = await habitProvider.createHabit(
+    final success = await habitProvider.createHabitWithTasks(
       userId: userId,
       habitName: _nameController.text.trim(),
       description: _descriptionController.text.trim().isNotEmpty
@@ -51,6 +68,7 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
           : null,
       icon: _selectedIcon,
       durationDays: _selectedDuration,
+      taskNames: _tasks,
     );
 
     if (success && mounted) {
@@ -60,8 +78,9 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
           content: const Text('Habit created successfully! 🎯'),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -70,9 +89,7 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Habit'),
-      ),
+      appBar: AppBar(title: const Text('Create Habit')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -83,9 +100,9 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
               // Icon Selector
               Text(
                 'Choose an Icon',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -112,10 +129,7 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
                         ),
                       ),
                       child: Center(
-                        child: Text(
-                          icon,
-                          style: const TextStyle(fontSize: 24),
-                        ),
+                        child: Text(icon, style: const TextStyle(fontSize: 24)),
                       ),
                     ),
                   );
@@ -158,15 +172,16 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
               // Duration
               Text(
                 'Duration',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   ...AppConstants.habitDurations.map((days) {
-                    final isSelected = !_isCustomDays && _selectedDuration == days;
+                    final isSelected =
+                        !_isCustomDays && _selectedDuration == days;
                     return Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -299,25 +314,139 @@ class _CreateHabitScreenState extends State<CreateHabitScreen> {
               ],
               const SizedBox(height: 32),
 
+              // Tasks Section
+              Text(
+                'Tasks (Optional)',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Break your habit into daily tasks. The habit will auto-complete when all tasks are done.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Task list
+              if (_tasks.isNotEmpty)
+                ...List.generate(_tasks.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _tasks[index],
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _tasks.removeAt(index);
+                              });
+                            },
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              size: 20,
+                            ),
+                            color: Colors.red.shade300,
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              // Add task input
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _taskController,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'e.g., Read 10 pages',
+                        prefixIcon: const Icon(Icons.add_task, size: 20),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                      ),
+                      onSubmitted: (value) {
+                        if (value.trim().isNotEmpty) {
+                          setState(() {
+                            _tasks.add(value.trim());
+                            _taskController.clear();
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_taskController.text.trim().isNotEmpty) {
+                        setState(() {
+                          _tasks.add(_taskController.text.trim());
+                          _taskController.clear();
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      minimumSize: Size.zero,
+                    ),
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
               // Preview Card
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.primary.withOpacity(0.1),
-                  ),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.1)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Preview',
-                      style:
-                          Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: AppColors.textSecondaryLight,
-                              ),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Row(

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/forgot_password_screen.dart';
+import '../screens/auth/otp_verification_screen.dart';
+import '../screens/auth/new_password_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/habits/habit_list_screen.dart';
 import '../screens/habits/create_habit_screen.dart';
@@ -17,6 +20,9 @@ class AppRoutes {
   static const String splash = '/';
   static const String login = '/login';
   static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
+  static const String otpVerification = '/otp-verification';
+  static const String newPassword = '/new-password';
   static const String home = '/home';
   static const String dashboard = '/dashboard';
   static const String habitList = '/habits';
@@ -32,6 +38,15 @@ class AppRoutes {
     splash: (context) => const SplashScreen(),
     login: (context) => const LoginScreen(),
     register: (context) => const RegisterScreen(),
+    forgotPassword: (context) => const ForgotPasswordScreen(),
+    otpVerification: (context) {
+      final email = ModalRoute.of(context)?.settings.arguments as String? ?? '';
+      return OTPVerificationScreen(email: email);
+    },
+    newPassword: (context) {
+      final email = ModalRoute.of(context)?.settings.arguments as String? ?? '';
+      return NewPasswordScreen(email: email);
+    },
     home: (context) => const HomeScreen(),
     dashboard: (context) => const DashboardScreen(),
     habitList: (context) => const HabitListScreen(),

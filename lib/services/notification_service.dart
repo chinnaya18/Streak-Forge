@@ -26,7 +26,7 @@ class NotificationService {
         return;
       }
 
-      // Mobile platforms
+      // Mobile / desktop platforms
       const androidSettings = AndroidInitializationSettings(
         '@mipmap/ic_launcher',
       );
@@ -227,6 +227,90 @@ class NotificationService {
       await _notifications.cancelAll();
     } catch (e) {
       print('Error canceling notifications: $e');
+    }
+  }
+
+  /// Send notification for incomplete habits
+  Future<void> sendIncompleteHabitsAlert({
+    required int pendingHabits,
+    required int pendingTasks,
+  }) async {
+    try {
+      if (!_initialized) return;
+
+      String body;
+      if (pendingHabits > 0 && pendingTasks > 0) {
+        body =
+            'You have $pendingHabits habit${pendingHabits > 1 ? 's' : ''} and '
+            '$pendingTasks task${pendingTasks > 1 ? 's' : ''} left to complete today. '
+            'Don\'t break your streak!';
+      } else if (pendingHabits > 0) {
+        body =
+            'You have $pendingHabits habit${pendingHabits > 1 ? 's' : ''} left to complete today. '
+            'Keep going!';
+      } else {
+        body =
+            'You have $pendingTasks task${pendingTasks > 1 ? 's' : ''} left to finish today. '
+            'Complete them to stay on track!';
+      }
+
+      await _notifications.show(
+        id: 4,
+        title: '\u23f0 Incomplete Tasks & Habits',
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            AppConstants.streakAlertChannel,
+            'Streak Alerts',
+            channelDescription: 'Alerts for incomplete habits and tasks',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+      );
+    } catch (e) {
+      print('Error sending incomplete habits alert: $e');
+    }
+  }
+
+  /// Schedule evening reminder for incomplete habits/tasks
+  Future<void> scheduleEveningReminder({int hour = 20, int minute = 0}) async {
+    try {
+      if (!_initialized) return;
+
+      await _notifications.zonedSchedule(
+        id: 5,
+        title: '\ud83c\udf19 Evening Check-in',
+        body:
+            'Have you completed all your habits and tasks today? '
+            'Open the app to check your progress!',
+        scheduledDate: _nextInstanceOfTime(hour, minute),
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            AppConstants.dailyReminderChannel,
+            'Daily Reminders',
+            channelDescription: 'Evening reminder for incomplete habits',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      print('Error scheduling evening reminder: $e');
     }
   }
 

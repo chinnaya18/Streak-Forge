@@ -6,11 +6,13 @@ import '../models/work_model.dart';
 import '../services/habit_service.dart';
 import '../services/streak_service.dart';
 import '../services/achievement_service.dart';
+import '../services/notification_service.dart';
 
 class HabitProvider extends ChangeNotifier {
   final HabitService _habitService = HabitService();
   final StreakService _streakService = StreakService();
   final AchievementService _achievementService = AchievementService();
+  final NotificationService _notificationService = NotificationService();
 
   StreamSubscription? _habitsSubscription;
   StreamSubscription? _activeHabitsSubscription;
@@ -43,13 +45,19 @@ class HabitProvider extends ChangeNotifier {
       notifyListeners();
     });
 
-    _activeHabitsSubscription = _habitService.getActiveHabits(userId).listen((habits) {
+    _activeHabitsSubscription = _habitService.getActiveHabits(userId).listen((
+      habits,
+    ) {
       _activeHabits = habits;
       _checkAllCompleted();
       notifyListeners();
     });
 
     loadTodayCompletions(userId);
+
+    // Schedule daily morning reminder & evening reminder for incomplete habits/tasks
+    _notificationService.scheduleDailyReminder(hour: 8, minute: 0);
+    _notificationService.scheduleEveningReminder(hour: 20, minute: 0);
   }
 
   /// Load today's completions
@@ -57,6 +65,48 @@ class HabitProvider extends ChangeNotifier {
     _todayCompletions = await _habitService.getTodayCompletions(userId);
     _checkAllCompleted();
     notifyListeners();
+  }
+
+  /// Create a new habit with optional tasks
+  Future<bool> createHabitWithTasks({
+    required String userId,
+    required String habitName,
+    String? description,
+    String? icon,
+    required int durationDays,
+    List<String> taskNames = const [],
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final habit = await _habitService.createHabit(
+        userId: userId,
+        habitName: habitName,
+        description: description,
+        icon: icon,
+        durationDays: durationDays,
+      );
+
+      // Create tasks/works for this habit
+      for (final taskName in taskNames) {
+        await _habitService.createWork(
+          habitId: habit.id,
+          userId: userId,
+          workName: taskName,
+        );
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   /// Create a new habit
@@ -154,6 +204,32 @@ class HabitProvider extends ChangeNotifier {
     );
   }
 
+  /// Check for incomplete habits/tasks and send notification if needed
+  Future<void> checkAndNotifyIncomplete(String userId) async {
+    if (_activeHabits.isEmpty) return;
+
+    final incompleteHabits = _activeHabits
+        .where((h) => !isHabitCompletedToday(h.id))
+        .toList();
+
+    if (incompleteHabits.isEmpty) return;
+
+    int totalPendingTasks = 0;
+    for (final habit in incompleteHabits) {
+      final stats = await _habitService.getWorkCompletionStats(habit.id);
+      final pending = (stats['total'] ?? 0) - (stats['completed'] ?? 0);
+      totalPendingTasks += pending;
+    }
+
+    await _notificationService.sendIncompleteHabitsAlert(
+      pendingHabits: incompleteHabits.length,
+      pendingTasks: totalPendingTasks,
+    );
+
+    // Also schedule the evening reminder
+    await _notificationService.scheduleEveningReminder();
+  }
+
   /// Get completion data for analytics
   Future<List<CompletionModel>> getCompletionsInRange({
     required String userId,
@@ -211,10 +287,7 @@ class HabitProvider extends ChangeNotifier {
     required String workId,
   }) async {
     try {
-      await _habitService.deleteWork(
-        habitId: habitId,
-        workId: workId,
-      );
+      await _habitService.deleteWork(habitId: habitId, workId: workId);
     } catch (e) {
       _error = e.toString();
       notifyListeners();

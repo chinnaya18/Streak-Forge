@@ -24,7 +24,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Mandatory first habit fields
   final _habitNameController = TextEditingController();
+  final _customDaysController = TextEditingController();
   int _selectedDuration = 30;
+  bool _isCustomDays = false;
 
   @override
   void dispose() {
@@ -33,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _habitNameController.dispose();
+    _customDaysController.dispose();
     super.dispose();
   }
 
@@ -85,9 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-      ),
+      appBar: AppBar(title: const Text('Create Account')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -99,15 +100,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text(
                   'Join ${AppConstants.appName}',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Start building life-changing habits today',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -246,12 +247,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(width: 8),
                           Text(
                             'Your First Habit',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -280,32 +277,92 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
                       Row(
-                        children: AppConstants.habitDurations.map((days) {
-                          final isSelected = _selectedDuration == days;
-                          return Expanded(
+                        children: [
+                          ...AppConstants.habitDurations.map((days) {
+                            final isSelected =
+                                !_isCustomDays && _selectedDuration == days;
+                            return Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: ChoiceChip(
+                                  label: Text('$days days'),
+                                  selected: isSelected,
+                                  selectedColor: AppColors.primary,
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? Colors.white : null,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      setState(() {
+                                        _selectedDuration = days;
+                                        _isCustomDays = false;
+                                        _customDaysController.clear();
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            );
+                          }),
+                          // Custom option
+                          Expanded(
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
                               child: ChoiceChip(
-                                label: Text('$days days'),
-                                selected: isSelected,
+                                label: const Text('Custom'),
+                                selected: _isCustomDays,
                                 selectedColor: AppColors.primary,
                                 labelStyle: TextStyle(
-                                  color:
-                                      isSelected ? Colors.white : null,
+                                  color: _isCustomDays ? Colors.white : null,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 onSelected: (selected) {
                                   if (selected) {
-                                    setState(
-                                        () => _selectedDuration = days);
+                                    setState(() {
+                                      _isCustomDays = true;
+                                    });
                                   }
                                 },
                               ),
                             ),
-                          );
-                        }).toList(),
+                          ),
+                        ],
                       ),
+                      if (_isCustomDays) ...[
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _customDaysController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Enter number of days',
+                            hintText: 'e.g., 21, 45, 100...',
+                            prefixIcon: Icon(Icons.calendar_today),
+                          ),
+                          validator: (value) {
+                            if (_isCustomDays) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter the number of days';
+                              }
+                              final days = int.tryParse(value.trim());
+                              if (days == null || days < 1 || days > 365) {
+                                return 'Enter a number between 1 and 365';
+                              }
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            final days = int.tryParse(value.trim());
+                            if (days != null && days > 0) {
+                              setState(() => _selectedDuration = days);
+                            }
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),

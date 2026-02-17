@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../config/constants.dart';
 
@@ -107,6 +108,133 @@ class AuthService {
   // Password reset
   Future<void> resetPassword(String email) async {
     await _auth.sendPasswordResetEmail(email: email.trim());
+  }
+
+  // Generate and send OTP for password reset
+  Future<String> generateAndSendOTP(String email) async {
+    try {
+      // Check if user exists
+      final userQuery = await _firestore
+          .collection(AppConstants.usersCollection)
+          .where('email', isEqualTo: email.trim())
+          .limit(1)
+          .get();
+
+      if (userQuery.docs.isEmpty) {
+        throw Exception('No account found with this email');
+      }
+
+      // Generate 6-digit OTP
+      final otp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
+          .toString(); // Generates 6-digit OTP
+
+      // Store OTP in Firestore with expiration (10 minutes)
+      await _firestore
+          .collection('password_reset_otps')
+          .doc(email.trim())
+          .set({
+        'otp': otp,
+        'email': email.trim(),
+        'createdAt': DateTime.now(),
+        'expiresAt': DateTime.now().add(const Duration(minutes: 10)),
+      });
+
+      // In production, send email with OTP
+      // For now, you can use Firebase Cloud Functions or EmailJS
+      // For testing, print the OTP to console
+      debugPrint('OTP for password reset: $otp');
+
+      return otp;
+    } catch (e) {
+      throw Exception('Failed to generate OTP: ${e.toString()}');
+    }
+  }
+
+  // Verify OTP
+  Future<bool> verifyPasswordResetOTP(String email, String otp) async {
+    try {
+      final doc = await _firestore
+          .collection('password_reset_otps')
+          .doc(email.trim())
+          .get();
+
+      if (!doc.exists) {
+        throw Exception('No OTP request found for this email');
+      }
+
+      final data = doc.data()!;
+      final storedOTP = data['otp'] as String;
+      final expiresAt =
+          (data['expiresAt'] as Timestamp).toDate();
+
+      // Check if OTP is expired
+      if (DateTime.now().isAfter(expiresAt)) {
+        throw Exception('OTP has expired. Please request a new one');
+      }
+
+      // Verify OTP
+      if (storedOTP != otp) {
+        throw Exception('Invalid OTP. Please try again');
+      }
+
+      return true;
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  // Update password after OTP verification
+  Future<void> updatePasswordAfterReset({
+    required String email,
+    required String newPassword,
+  }) async {
+    try {
+      // Find user by email
+      final userQuery = await _firestore
+          .collection(AppConstants.usersCollection)
+          .where('email', isEqualTo: email.trim())
+          .limit(1)
+          .get();
+
+      if (userQuery.docs.isEmpty) {
+        throw Exception('User not found');
+      }
+
+      // Store the password update request in Firestore
+      // In a production app, this would be handled by a Firebase Cloud Function
+      // that has admin privileges to update the password
+      await _firestore
+          .collection('password_reset_requests')
+          .doc(email.trim())
+          .set({
+        'email': email.trim(),
+        'newPassword': newPassword,
+        'verified': true,
+        'requestedAt': DateTime.now(),
+        'completed': false,
+      });
+
+      // Send an email confirmation
+      // Note: In production, send actual email via Firebase Cloud Function
+      debugPrint('Password reset request stored for: $email');
+      debugPrint('New password: $newPassword (for demo purposes only)');
+
+      // For security: In a real app, you should:
+      // 1. Call a Firebase Cloud Function that has admin credentials
+      // 2. The function will verify the request and update the password
+      // 3. Send confirmation email
+
+      // For MVP/demo purposes, we're storing the request
+      // A Cloud Function listener should pick this up and update the auth password
+
+      // Cleanup: Delete the OTP record
+      await _firestore
+          .collection('password_reset_otps')
+          .doc(email.trim())
+          .delete();
+    } catch (e) {
+      throw Exception('Password update failed: ${e.toString()}');
+    }
   }
 
   // Generate a unique friend ID from UID

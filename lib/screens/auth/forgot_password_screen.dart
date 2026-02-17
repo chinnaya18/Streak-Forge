@@ -4,52 +4,50 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-
-  @override
-  void initState() {
-    super.initState();
-    // Clear any previous errors
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).clearError();
-    });
-  }
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _sendOTP() async {
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.login(
+    final success = await authProvider.sendPasswordResetOTP(
       email: _emailController.text,
-      password: _passwordController.text,
     );
 
     if (success && mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.pushNamed(
+        context,
+        AppRoutes.otpVerification,
+        arguments: _emailController.text,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Forgot Password'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -58,17 +56,17 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 60),
+                const SizedBox(height: 32),
                 // Header
                 const Center(
                   child: Text(
-                    '🔥',
+                    '🔑',
                     style: TextStyle(fontSize: 64),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Welcome Back',
+                  'Reset Your Password',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -76,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to continue your streak',
+                  'Enter your email and we\'ll send you an OTP to verify',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondaryLight,
@@ -91,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email_outlined),
+                    hintText: 'Enter your registered email',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -102,51 +101,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-
-                // Password field
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
                 const SizedBox(height: 8),
-
-                // Forgot password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.forgotPassword);
-                    },
-                    child: const Text('Forgot Password?'),
-                  ),
+                Text(
+                  'We\'ll send a one-time password (OTP) to this email',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Error message
                 Consumer<AuthProvider>(
@@ -172,13 +134,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
 
-                // Login button
+                // Send OTP button
                 Consumer<AuthProvider>(
                   builder: (context, auth, child) {
                     return SizedBox(
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: auth.isLoading ? null : _login,
+                        onPressed: auth.isLoading ? null : _sendOTP,
                         child: auth.isLoading
                             ? const SizedBox(
                                 height: 24,
@@ -188,27 +150,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text('Sign In'),
+                            : const Text('Send OTP'),
                       ),
                     );
                   },
                 ),
                 const SizedBox(height: 24),
 
-                // Register link
+                // Back to login
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Don\'t have an account? ',
+                      'Remember your password? ',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.register);
+                        Navigator.pop(context);
                       },
                       child: const Text(
-                        'Sign Up',
+                        'Sign In',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),

@@ -9,7 +9,6 @@ import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/habit_provider.dart';
 import '../../models/habit_model.dart';
-import '../../models/work_model.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -404,12 +403,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return _HabitCard(
           habit: habit,
           isCompleted: isCompleted,
+          userId: userId,
           onComplete: () async {
             if (isCompleted) return;
             final confirm = await showDialog<bool>(
               context: context,
               builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 title: Row(
                   children: [
                     Icon(Icons.check_circle_outline, color: AppColors.accent),
@@ -417,7 +419,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const Text('Complete Habit'),
                   ],
                 ),
-                content: Text('Are you sure you have finished "${habit.habitName}" for today?'),
+                content: Text(
+                  'Are you sure you have finished "${habit.habitName}" for today?',
+                ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
@@ -480,151 +484,98 @@ class _HabitCard extends StatelessWidget {
   final HabitModel habit;
   final bool isCompleted;
   final VoidCallback onComplete;
+  final String userId;
 
   const _HabitCard({
     required this.habit,
     required this.isCompleted,
     required this.onComplete,
+    required this.userId,
   });
 
   @override
   Widget build(BuildContext context) {
-    final habitProvider = Provider.of<HabitProvider>(context, listen: false);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
+        child: Row(
+          children: [
+            // Completion checkbox
+            GestureDetector(
+              onTap: isCompleted ? null : onComplete,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? AppColors.success
+                      : AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                  border: isCompleted
+                      ? null
+                      : Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                          width: 2,
+                        ),
+                ),
+                child: Icon(
+                  isCompleted ? Icons.check : Icons.circle_outlined,
+                  color: isCompleted ? Colors.white : AppColors.primary,
+                  size: 24,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Habit info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Completion checkbox
-                  GestureDetector(
-                    onTap: isCompleted ? null : onComplete,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: isCompleted
-                            ? AppColors.success
-                            : AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(14),
-                        border: isCompleted
-                            ? null
-                            : Border.all(
-                                color: AppColors.primary.withOpacity(0.3),
-                                width: 2,
-                              ),
-                      ),
-                      child: Icon(
-                        isCompleted ? Icons.check : Icons.circle_outlined,
-                        color: isCompleted ? Colors.white : AppColors.primary,
-                        size: 24,
-                      ),
+                  Text(
+                    habit.habitName,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      decoration: isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
+                      color: isCompleted ? AppColors.textSecondaryLight : null,
                     ),
                   ),
-                  const SizedBox(width: 16),
-
-                  // Habit info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          habit.habitName,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            decoration: isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                            color: isCompleted
-                                ? AppColors.textSecondaryLight
-                                : null,
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        '${habit.completedDays}/${habit.durationDays} days',
+                        style: const TextStyle(
+                          color: AppColors.textSecondaryLight,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: habit.progressPercentage,
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
+                            minHeight: 6,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Text(
-                              '${habit.completedDays}/${habit.durationDays} days',
-                              style: const TextStyle(
-                                color: AppColors.textSecondaryLight,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: habit.progressPercentage,
-                                  backgroundColor: AppColors.primary.withOpacity(
-                                    0.1,
-                                  ),
-                                  valueColor: const AlwaysStoppedAnimation<Color>(
-                                    AppColors.primary,
-                                  ),
-                                  minHeight: 6,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              // Show work/task summary
-              StreamBuilder<List<WorkModel>>(
-                stream: habitProvider.getWorksForHabit(habit.id),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const SizedBox.shrink();
-                  }
-                  final works = snapshot.data!;
-                  final completedCount = works.where((w) => w.isCompleted).length;
-                  final totalCount = works.length;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 10, left: 64),
-                    child: Row(
-                      children: [
-                        Icon(Icons.task_alt, size: 16, color: completedCount == totalCount ? AppColors.success : AppColors.textSecondaryLight),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$completedCount/$totalCount tasks',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: completedCount == totalCount
-                                ? AppColors.success
-                                : AppColors.textSecondaryLight,
-                            fontWeight: completedCount == totalCount
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(3),
-                            child: LinearProgressIndicator(
-                              value: totalCount > 0 ? completedCount / totalCount : 0,
-                              backgroundColor: AppColors.success.withOpacity(0.1),
-                              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
-                              minHeight: 4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }

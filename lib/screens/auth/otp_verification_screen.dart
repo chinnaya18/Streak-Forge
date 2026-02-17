@@ -4,52 +4,74 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class OTPVerificationScreen extends StatefulWidget {
+  final String email;
+
+  const OTPVerificationScreen({
+    super.key,
+    required this.email,
+  });
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _otpController = TextEditingController();
+  int _remainingTime = 300; // 5 minutes
+  late Future<void> _timerFuture;
 
   @override
   void initState() {
     super.initState();
-    // Clear any previous errors
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).clearError();
-    });
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _remainingTime = 300;
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _verifyOTP() async {
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.login(
-      email: _emailController.text,
-      password: _passwordController.text,
+    final success = await authProvider.verifyPasswordResetOTP(
+      email: widget.email,
+      otp: _otpController.text,
     );
 
     if (success && mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.pushNamed(
+        context,
+        AppRoutes.newPassword,
+        arguments: widget.email,
+      );
     }
+  }
+
+  Future<void> _resendOTP() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.sendPasswordResetOTP(email: widget.email);
+    _startTimer();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Verify OTP'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -58,17 +80,17 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 60),
+                const SizedBox(height: 32),
                 // Header
                 const Center(
                   child: Text(
-                    '🔥',
+                    '📧',
                     style: TextStyle(fontSize: 64),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Welcome Back',
+                  'Verify Your Email',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -76,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to continue your streak',
+                  'We\'ve sent an OTP to ${widget.email}',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondaryLight,
@@ -84,69 +106,39 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 48),
 
-                // Email field
+                // OTP field
                 TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Password field
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 6,
+                  style: Theme.of(context).textTheme.headlineSmall,
                   decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                    labelText: 'Enter OTP',
+                    hintText: '000000',
+                    counterText: '',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
+                      return 'Please enter the OTP';
                     }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                    if (value.length != 6) {
+                      return 'OTP must be 6 digits';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 8),
-
-                // Forgot password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.forgotPassword);
-                    },
-                    child: const Text('Forgot Password?'),
-                  ),
+                Text(
+                  'Enter the 6-digit code sent to your email',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Error message
                 Consumer<AuthProvider>(
@@ -172,13 +164,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
 
-                // Login button
+                // Verify button
                 Consumer<AuthProvider>(
                   builder: (context, auth, child) {
                     return SizedBox(
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: auth.isLoading ? null : _login,
+                        onPressed: auth.isLoading ? null : _verifyOTP,
                         child: auth.isLoading
                             ? const SizedBox(
                                 height: 24,
@@ -188,27 +180,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text('Sign In'),
+                            : const Text('Verify OTP'),
                       ),
                     );
                   },
                 ),
                 const SizedBox(height: 24),
 
-                // Register link
+                // Resend OTP
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Don\'t have an account? ',
+                      'Didn\'t receive the OTP? ',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.register);
-                      },
+                      onPressed: _resendOTP,
                       child: const Text(
-                        'Sign Up',
+                        'Resend',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
