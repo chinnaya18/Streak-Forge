@@ -5,7 +5,6 @@ import '../screens/auth/register_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/habits/habit_list_screen.dart';
 import '../screens/habits/create_habit_screen.dart';
-import '../screens/habits/habit_detail_screen.dart';
 import '../screens/streak/streak_screen.dart';
 import '../screens/analytics/analytics_screen.dart';
 import '../screens/profile/profile_screen.dart';
@@ -22,7 +21,6 @@ class AppRoutes {
   static const String dashboard = '/dashboard';
   static const String habitList = '/habits';
   static const String createHabit = '/habits/create';
-  static const String habitDetail = '/habits/detail';
   static const String streak = '/streak';
   static const String analytics = '/analytics';
   static const String profile = '/profile';
@@ -47,15 +45,6 @@ class AppRoutes {
   };
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
-    switch (settings.name) {
-      case habitDetail:
-        final habitId = settings.arguments as String?;
-        if (habitId == null) return null;
-        return MaterialPageRoute(
-          builder: (context) => HabitDetailScreen(habitId: habitId),
-        );
-      default:
-        return null;
-    }
+    return null;
   }
 }

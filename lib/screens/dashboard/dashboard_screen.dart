@@ -410,13 +410,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               habitId: habit.id,
             );
           },
-          onTap: () {
-            Navigator.pushNamed(
-              context,
-              AppRoutes.habitDetail,
-              arguments: habit.id,
-            );
-          },
+          onTap: () {},
         );
       },
     );

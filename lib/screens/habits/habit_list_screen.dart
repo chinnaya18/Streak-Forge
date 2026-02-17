@@ -152,13 +152,7 @@ class HabitListScreen extends StatelessWidget {
                   ? AppColors.streakGold
                   : AppColors.textSecondaryLight,
             ),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.habitDetail,
-                arguments: habit.id,
-              );
-            },
+            onTap: () {},
           ),
         );
       },

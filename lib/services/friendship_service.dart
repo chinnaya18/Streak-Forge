@@ -168,11 +168,12 @@ class FriendshipService {
           Filter('user1Id', isEqualTo: userId),
           Filter('user2Id', isEqualTo: userId),
         ))
-        .orderBy('friendshipStreak', descending: true)
         .get();
 
-    return snapshot.docs
+    final friendships = snapshot.docs
         .map((doc) => FriendshipModel.fromMap(doc.data(), doc.id))
         .toList();
+    friendships.sort((a, b) => b.friendshipStreak.compareTo(a.friendshipStreak));
+    return friendships;
   }
 }

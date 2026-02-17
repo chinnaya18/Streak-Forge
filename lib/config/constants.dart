@@ -1,6 +1,6 @@
 class AppConstants {
   // App Info
-  static const String appName = 'StreakForge';
+  static const String appName = 'StreakZen';
   static const String appVersion = '1.0.0';
   static const String appTagline = 'Forge Your Discipline';
 

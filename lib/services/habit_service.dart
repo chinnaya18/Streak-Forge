@@ -48,11 +48,14 @@ class HabitService {
     return _firestore
         .collection(AppConstants.habitsCollection)
         .where('userId', isEqualTo: userId)
-        .orderBy('startDate', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => HabitModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map((snapshot) {
+          final habits = snapshot.docs
+              .map((doc) => HabitModel.fromMap(doc.data(), doc.id))
+              .toList();
+          habits.sort((a, b) => b.startDate.compareTo(a.startDate));
+          return habits;
+        });
   }
 
   // Get active habits
