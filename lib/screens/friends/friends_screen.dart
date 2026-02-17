@@ -46,8 +46,9 @@ class _FriendsScreenState extends State<FriendsScreen>
             Tab(text: 'Friends'),
             Tab(text: 'Leaderboard'),
           ],
-          indicatorColor: AppColors.primary,
-          labelColor: AppColors.primary,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
         ),
         actions: [
           IconButton(

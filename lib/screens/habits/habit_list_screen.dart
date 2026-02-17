@@ -27,8 +27,9 @@ class HabitListScreen extends StatelessWidget {
               Tab(text: 'Active'),
               Tab(text: 'Completed'),
             ],
-            indicatorColor: AppColors.primary,
-            labelColor: AppColors.primary,
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
