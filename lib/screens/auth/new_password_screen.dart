@@ -7,10 +7,7 @@ import '../../providers/auth_provider.dart';
 class NewPasswordScreen extends StatefulWidget {
   final String email;
 
-  const NewPasswordScreen({
-    super.key,
-    required this.email,
-  });
+  const NewPasswordScreen({super.key, required this.email});
 
   @override
   State<NewPasswordScreen> createState() => _NewPasswordScreenState();
@@ -74,27 +71,22 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               children: [
                 const SizedBox(height: 32),
                 // Header
-                const Center(
-                  child: Text(
-                    '🔐',
-                    style: TextStyle(fontSize: 64),
-                  ),
-                ),
+                const Center(child: Text('🔐', style: TextStyle(fontSize: 64))),
                 const SizedBox(height: 16),
                 Text(
                   'Create New Password',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Please enter a strong password',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 const SizedBox(height: 48),
 
@@ -145,8 +137,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                       ),
                       onPressed: () {
                         setState(() {
-                          _obscureConfirmPassword =
-                              !_obscureConfirmPassword;
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
                         });
                       },
                     ),
@@ -165,8 +156,8 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                 Text(
                   'Password requirements:\n• At least 6 characters\n• Strong & unique',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 const SizedBox(height: 32),
 

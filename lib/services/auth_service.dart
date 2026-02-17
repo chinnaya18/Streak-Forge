@@ -23,11 +23,11 @@ class AuthService {
     DateTime? dateOfBirth,
   }) async {
     try {
-      final UserCredential credential =
-          await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
+      final UserCredential credential = await _auth
+          .createUserWithEmailAndPassword(
+            email: email.trim(),
+            password: password,
+          );
 
       if (credential.user == null) return null;
 
@@ -65,8 +65,7 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final UserCredential credential =
-          await _auth.signInWithEmailAndPassword(
+      final UserCredential credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
@@ -129,10 +128,7 @@ class AuthService {
           .toString(); // Generates 6-digit OTP
 
       // Store OTP in Firestore with expiration (10 minutes)
-      await _firestore
-          .collection('password_reset_otps')
-          .doc(email.trim())
-          .set({
+      await _firestore.collection('password_reset_otps').doc(email.trim()).set({
         'otp': otp,
         'email': email.trim(),
         'createdAt': DateTime.now(),
@@ -164,8 +160,7 @@ class AuthService {
 
       final data = doc.data()!;
       final storedOTP = data['otp'] as String;
-      final expiresAt =
-          (data['expiresAt'] as Timestamp).toDate();
+      final expiresAt = (data['expiresAt'] as Timestamp).toDate();
 
       // Check if OTP is expired
       if (DateTime.now().isAfter(expiresAt)) {
@@ -207,12 +202,12 @@ class AuthService {
           .collection('password_reset_requests')
           .doc(email.trim())
           .set({
-        'email': email.trim(),
-        'newPassword': newPassword,
-        'verified': true,
-        'requestedAt': DateTime.now(),
-        'completed': false,
-      });
+            'email': email.trim(),
+            'newPassword': newPassword,
+            'verified': true,
+            'requestedAt': DateTime.now(),
+            'completed': false,
+          });
 
       // Send an email confirmation
       // Note: In production, send actual email via Firebase Cloud Function

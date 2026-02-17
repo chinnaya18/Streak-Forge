@@ -60,27 +60,22 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 60),
                 // Header
-                const Center(
-                  child: Text(
-                    '🔥',
-                    style: TextStyle(fontSize: 64),
-                  ),
-                ),
+                const Center(child: Text('🔥', style: TextStyle(fontSize: 64))),
                 const SizedBox(height: 16),
                 Text(
                   'Welcome Back',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Sign in to continue your streak',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 const SizedBox(height: 48),
 

@@ -58,27 +58,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               children: [
                 const SizedBox(height: 32),
                 // Header
-                const Center(
-                  child: Text(
-                    '🔑',
-                    style: TextStyle(fontSize: 64),
-                  ),
-                ),
+                const Center(child: Text('🔑', style: TextStyle(fontSize: 64))),
                 const SizedBox(height: 16),
                 Text(
                   'Reset Your Password',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Enter your email and we\'ll send you an OTP to verify',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 const SizedBox(height: 48),
 
@@ -105,8 +100,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Text(
                   'We\'ll send a one-time password (OTP) to this email',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 const SizedBox(height: 32),
 

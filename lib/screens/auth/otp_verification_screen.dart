@@ -7,10 +7,7 @@ import '../../providers/auth_provider.dart';
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
 
-  const OTPVerificationScreen({
-    super.key,
-    required this.email,
-  });
+  const OTPVerificationScreen({super.key, required this.email});
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -82,27 +79,22 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               children: [
                 const SizedBox(height: 32),
                 // Header
-                const Center(
-                  child: Text(
-                    '📧',
-                    style: TextStyle(fontSize: 64),
-                  ),
-                ),
+                const Center(child: Text('📧', style: TextStyle(fontSize: 64))),
                 const SizedBox(height: 16),
                 Text(
                   'Verify Your Email',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'We\'ve sent an OTP to ${widget.email}',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 const SizedBox(height: 48),
 
@@ -135,8 +127,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 Text(
                   'Enter the 6-digit code sent to your email',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
